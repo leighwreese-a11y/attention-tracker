@@ -43,6 +43,27 @@ function localDayStr(ms) {
   return y + "-" + m + "-" + day;
 }
 
+// Snap a time to 12:00 noon of its day (avoids any timezone edge cases
+// when we store a mark for a past day).
+function noonOf(ms) {
+  const d = new Date(ms);
+  d.setHours(12, 0, 0, 0);
+  return d.getTime();
+}
+
+// A friendly label: "Today", "Yesterday", or e.g. "Wed 24 Jun".
+function dayLabel(ms) {
+  const day = localDayStr(ms);
+  if (day === localDayStr(Date.now())) return "Today";
+  if (day === localDayStr(Date.now() - 24 * 60 * 60 * 1000)) return "Yesterday";
+  return new Date(ms).toLocaleDateString([], {
+    weekday: "short", day: "numeric", month: "short",
+  });
+}
+
+// The day we're currently marking. Starts on today each time you open.
+let selectedMs = noonOf(Date.now());
+
 // Throw away anything older than the rolling window (keeps storage tiny).
 function pruneOld() {
   const cutoff = Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000;
@@ -70,36 +91,36 @@ const grid = document.getElementById("grid");
 function renderGrid() {
   const cats = getCategories();
   const counts = countsLast14();
-  const today = localDayStr(Date.now());
+  const selectedDay = localDayStr(selectedMs);
 
-  // Which categories have already been marked for today?
-  const markedToday = {};
+  // Which categories are already marked for the chosen day?
+  const marked = {};
   getCheckins().forEach(function (item) {
-    if (localDayStr(item.t) === today) markedToday[item.c] = true;
+    if (localDayStr(item.t) === selectedDay) marked[item.c] = true;
   });
 
   grid.innerHTML = "";
 
   cats.forEach(function (name, index) {
-    const isToday = markedToday[index] === true;
+    const isMarked = marked[index] === true;
     const btn = document.createElement("button");
-    btn.className = "cat-btn" + (isToday ? " active" : "");
+    btn.className = "cat-btn" + (isMarked ? " active" : "");
     btn.innerHTML =
       '<span class="count">' + counts[index] + "</span>" +
       "<span>" + escapeHtml(name) + "</span>" +
-      (isToday ? '<span class="today-tag">✓ today</span>' : "");
+      (isMarked ? '<span class="today-tag">✓ marked</span>' : "");
 
     btn.addEventListener("click", function () {
       const list = getCheckins();
-      // Is today already marked for this category? Find it.
+      // Is the chosen day already marked for this category? Find it.
       const existing = list.findIndex(function (item) {
-        return item.c === index && localDayStr(item.t) === today;
+        return item.c === index && localDayStr(item.t) === selectedDay;
       });
 
       if (existing >= 0) {
-        list.splice(existing, 1); // tap again = undo today's mark
+        list.splice(existing, 1); // tap again = undo this day's mark
       } else {
-        list.push({ c: index, t: Date.now() }); // mark today
+        list.push({ c: index, t: selectedMs }); // mark the chosen day
       }
       saveCheckins(list);
 
@@ -110,6 +131,31 @@ function renderGrid() {
     grid.appendChild(btn);
   });
 }
+
+// --- The day picker ----------------------------------------------------
+
+const dayPrev = document.getElementById("day-prev");
+const dayNext = document.getElementById("day-next");
+const dayLabelEl = document.getElementById("day-label");
+
+function renderDayNav() {
+  dayLabelEl.textContent = dayLabel(selectedMs);
+  // Can't mark the future: disable "next" once we're on today.
+  dayNext.disabled = localDayStr(selectedMs) === localDayStr(Date.now());
+}
+
+dayPrev.addEventListener("click", function () {
+  selectedMs = noonOf(selectedMs - 24 * 60 * 60 * 1000);
+  renderDayNav();
+  renderGrid();
+});
+
+dayNext.addEventListener("click", function () {
+  if (dayNext.disabled) return;
+  selectedMs = noonOf(selectedMs + 24 * 60 * 60 * 1000);
+  renderDayNav();
+  renderGrid();
+});
 
 // --- The 14-day summary bars ------------------------------------------
 
@@ -190,6 +236,7 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+renderDayNav();
 renderGrid();
 renderSummary();
 

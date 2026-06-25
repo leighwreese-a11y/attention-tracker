@@ -20,7 +20,12 @@
     <!-- 1. Tap a category to log where your attention is right now -->
     <section class="card">
       <h2>Where's your attention?</h2>
-      <p class="hint">Tap to mark today. Tap again to undo. One mark per day.</p>
+      <p class="hint">Tap to mark the chosen day. Tap again to undo. One mark per day.</p>
+      <div class="day-nav">
+        <button id="day-prev" class="secondary" aria-label="Previous day">‹</button>
+        <span id="day-label"></span>
+        <button id="day-next" class="secondary" aria-label="Next day">›</button>
+      </div>
       <div id="grid" class="grid"></div>
     </section>
 
