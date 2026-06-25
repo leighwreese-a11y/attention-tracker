@@ -81,9 +81,16 @@ h2 {
   transform: scale(0.96);
 }
 
-/* brief flash after a tap to confirm it registered */
-.cat-btn.tapped {
+/* a category that's already marked for today */
+.cat-btn.active {
   background: var(--teal-dark);
+  outline: 3px solid #5eead4;
+  outline-offset: -3px;
+}
+
+.cat-btn .today-tag {
+  font-size: 0.7rem;
+  opacity: 0.9;
 }
 
 .cat-btn .count {

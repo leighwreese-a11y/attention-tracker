@@ -33,6 +33,16 @@ function saveCheckins(list) {
   localStorage.setItem("checkins", JSON.stringify(list));
 }
 
+// A category gets at most ONE tap per day. We compare days using the
+// local calendar date, e.g. "2026-06-25", so "today" matches your day.
+function localDayStr(ms) {
+  const d = new Date(ms);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
 // Throw away anything older than the rolling window (keeps storage tiny).
 function pruneOld() {
   const cutoff = Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000;
@@ -60,23 +70,38 @@ const grid = document.getElementById("grid");
 function renderGrid() {
   const cats = getCategories();
   const counts = countsLast14();
+  const today = localDayStr(Date.now());
+
+  // Which categories have already been marked for today?
+  const markedToday = {};
+  getCheckins().forEach(function (item) {
+    if (localDayStr(item.t) === today) markedToday[item.c] = true;
+  });
+
   grid.innerHTML = "";
 
   cats.forEach(function (name, index) {
+    const isToday = markedToday[index] === true;
     const btn = document.createElement("button");
-    btn.className = "cat-btn";
+    btn.className = "cat-btn" + (isToday ? " active" : "");
     btn.innerHTML =
       '<span class="count">' + counts[index] + "</span>" +
-      "<span>" + escapeHtml(name) + "</span>";
+      "<span>" + escapeHtml(name) + "</span>" +
+      (isToday ? '<span class="today-tag">✓ today</span>' : "");
 
     btn.addEventListener("click", function () {
       const list = getCheckins();
-      list.push({ c: index, t: Date.now() });
-      saveCheckins(list);
+      // Is today already marked for this category? Find it.
+      const existing = list.findIndex(function (item) {
+        return item.c === index && localDayStr(item.t) === today;
+      });
 
-      // brief flash so you know the tap landed
-      btn.classList.add("tapped");
-      setTimeout(function () { btn.classList.remove("tapped"); }, 180);
+      if (existing >= 0) {
+        list.splice(existing, 1); // tap again = undo today's mark
+      } else {
+        list.push({ c: index, t: Date.now() }); // mark today
+      }
+      saveCheckins(list);
 
       renderGrid();
       renderSummary();
