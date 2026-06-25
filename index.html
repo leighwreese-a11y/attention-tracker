@@ -2,15 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Makes the app size correctly on a phone screen -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attention Tracker</title>
 
-  <!-- Tells the phone this is an installable app -->
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#0f766e" />
-
-  <!-- Icon shown when you "Add to Home Screen" on iPhone -->
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Attention" />
@@ -21,32 +17,28 @@
   <main>
     <h1>Attention Tracker</h1>
 
-    <!-- 1. Set what you INTEND to focus on today -->
+    <!-- 1. Tap a category to log where your attention is right now -->
     <section class="card">
-      <h2>Today's intention</h2>
-      <p class="hint">What do you mean to focus on today?</p>
-      <div class="row">
-        <input id="intention-input" type="text" placeholder="e.g. Deep work on the app" />
-        <button id="save-intention">Save</button>
-      </div>
-      <p id="intention-display" class="intention"></p>
+      <h2>Where's your attention?</h2>
+      <p class="hint">Tap a category to log it right now.</p>
+      <div id="grid" class="grid"></div>
     </section>
 
-    <!-- 2. Log where your attention ACTUALLY is, right now -->
+    <!-- 2. Rolling 14-day summary -->
     <section class="card">
-      <h2>Attention check-in</h2>
-      <p class="hint">Where is your attention right now?</p>
-      <div class="row">
-        <input id="checkin-input" type="text" placeholder="e.g. Scrolling my phone" />
-        <button id="add-checkin">Log it</button>
-      </div>
+      <h2>Last 14 days</h2>
+      <p class="hint">A running 2-week window. Older taps drop off automatically.</p>
+      <div id="summary"></div>
     </section>
 
-    <!-- 3. The list of today's check-ins -->
+    <!-- 3. Edit the 12 category names -->
     <section class="card">
-      <h2>Today's check-ins</h2>
-      <ul id="checkin-list"></ul>
-      <p id="empty-note" class="hint">No check-ins yet today.</p>
+      <button id="edit-toggle" class="secondary">Edit categories</button>
+      <div id="edit-panel" class="edit-panel" hidden>
+        <p class="hint">Rename any category, then tap Done.</p>
+        <div id="edit-fields"></div>
+        <button id="edit-done">Done</button>
+      </div>
     </section>
   </main>
 
