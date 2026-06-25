@@ -1,0 +1,17 @@
+# Common junk we never want to save to GitHub
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Secrets / environment files (keep passwords out of GitHub!)
+.env
+*.local
