@@ -1,40 +1,44 @@
-// Attention Tracker — all data lives in THIS browser only (localStorage).
-// Each person's data stays on their own device. Nothing is sent anywhere.
+// Tjikko — an almanac of where the attention goes.
+// All data lives in THIS browser only (localStorage). Nothing leaves the device.
 
-// How many days the rolling window covers.
 const WINDOW_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Starter names for the 12 categories. Fully editable in the app.
+// Starter "roots". Fully editable via Tend categories.
 const DEFAULT_CATEGORIES = [
-  "Deep work", "Email", "Meetings",
-  "Phone / scrolling", "Family", "Exercise",
-  "Rest", "Reading", "Chores",
-  "Social", "Planning", "Other",
+  "Deep work", "Making art", "Reading", "The garden",
+  "People I love", "The body", "Rest", "The wander",
+  "Small screens", "Cooking", "Money & admin", "The unnamed",
 ];
 
-// --- Saving & loading data ---------------------------------------------
+// One earthy colour per category, by position.
+const COLORS = [
+  "#8b9b6a", "#c07a4b", "#9a86b4", "#6fa080",
+  "#c08585", "#5f9a92", "#c2b06a", "#88a0bd",
+  "#b56a4a", "#cda35a", "#a9a596", "#9a978c",
+];
+
+// --- Saving & loading --------------------------------------------------
 
 function getCategories() {
   const raw = localStorage.getItem("categories");
   return raw ? JSON.parse(raw) : DEFAULT_CATEGORIES.slice();
 }
-
 function saveCategories(list) {
   localStorage.setItem("categories", JSON.stringify(list));
 }
 
-// A check-in is { c: categoryIndex, t: timestamp(ms) }.
+// A mark is { c: categoryIndex, t: timestamp(ms) }. One per category per day.
 function getCheckins() {
   const raw = localStorage.getItem("checkins");
   return raw ? JSON.parse(raw) : [];
 }
-
 function saveCheckins(list) {
   localStorage.setItem("checkins", JSON.stringify(list));
 }
 
-// A category gets at most ONE tap per day. We compare days using the
-// local calendar date, e.g. "2026-06-25", so "today" matches your day.
+// --- Dates -------------------------------------------------------------
+
 function localDayStr(ms) {
   const d = new Date(ms);
   const y = d.getFullYear();
@@ -43,204 +47,236 @@ function localDayStr(ms) {
   return y + "-" + m + "-" + day;
 }
 
-// Snap a time to 12:00 noon of its day (avoids any timezone edge cases
-// when we store a mark for a past day).
 function noonOf(ms) {
   const d = new Date(ms);
   d.setHours(12, 0, 0, 0);
   return d.getTime();
 }
 
-// A friendly label: "Today", "Yesterday", or e.g. "Wed 24 Jun".
-function dayLabel(ms) {
-  const day = localDayStr(ms);
-  if (day === localDayStr(Date.now())) return "Today";
-  if (day === localDayStr(Date.now() - 24 * 60 * 60 * 1000)) return "Yesterday";
-  return new Date(ms).toLocaleDateString([], {
-    weekday: "short", day: "numeric", month: "short",
-  });
-}
-
-// The day we're currently marking. Starts on today each time you open.
-let selectedMs = noonOf(Date.now());
-
-// Throw away anything older than the rolling window (keeps storage tiny).
+// Drop marks older than the rolling window (keeps storage tiny).
 function pruneOld() {
-  const cutoff = Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000;
-  const kept = getCheckins().filter(function (item) {
-    return item.t >= cutoff;
-  });
+  const cutoff = Date.now() - WINDOW_DAYS * DAY_MS;
+  const kept = getCheckins().filter(function (item) { return item.t >= cutoff; });
   saveCheckins(kept);
   return kept;
 }
 
-// Count taps per category within the rolling window.
+// The set of category indices marked on a given day ("YYYY-MM-DD").
+function marksForDay(dayStr) {
+  const set = new Set();
+  getCheckins().forEach(function (item) {
+    if (localDayStr(item.t) === dayStr) set.add(item.c);
+  });
+  return set;
+}
+
+// Days-marked per category across the rolling window.
 function countsLast14() {
-  const cats = getCategories();
-  const counts = cats.map(function () { return 0; });
+  const counts = getCategories().map(function () { return 0; });
   pruneOld().forEach(function (item) {
     if (item.c >= 0 && item.c < counts.length) counts[item.c]++;
   });
   return counts;
 }
 
-// --- The tap grid ------------------------------------------------------
+// The day currently being tended. Starts on today.
+let selectedMs = noonOf(Date.now());
+
+function oldestMs() { return noonOf(Date.now() - (WINDOW_DAYS - 1) * DAY_MS); }
+
+// --- Elements ----------------------------------------------------------
 
 const grid = document.getElementById("grid");
+const summaryEl = document.getElementById("summary");
+const calendarEl = document.getElementById("calendar");
+const tendTitle = document.getElementById("tend-title");
+const tallyEl = document.getElementById("tally");
+const dayCaps = document.getElementById("day-caps");
+const dayPrev = document.getElementById("day-prev");
+const dayNext = document.getElementById("day-next");
+
+// --- Rendering ---------------------------------------------------------
+
+function renderDay() {
+  const sel = localDayStr(selectedMs);
+  const isToday = sel === localDayStr(Date.now());
+
+  dayCaps.textContent = "✦ " + new Date(selectedMs)
+    .toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })
+    .toUpperCase() + " ✦";
+
+  tendTitle.textContent = isToday ? "The grove I tend today" : "The grove I tended";
+  dayNext.disabled = isToday;
+  dayPrev.disabled = sel === localDayStr(oldestMs());
+}
+
+function renderTally() {
+  const n = marksForDay(localDayStr(selectedMs)).size;
+  tallyEl.innerHTML = "<strong>" + n + "</strong> of 12 roots tended.";
+}
 
 function renderGrid() {
   const cats = getCategories();
-  const counts = countsLast14();
-  const selectedDay = localDayStr(selectedMs);
-
-  // Which categories are already marked for the chosen day?
-  const marked = {};
-  getCheckins().forEach(function (item) {
-    if (localDayStr(item.t) === selectedDay) marked[item.c] = true;
-  });
-
+  const marks = marksForDay(localDayStr(selectedMs));
   grid.innerHTML = "";
 
-  cats.forEach(function (name, index) {
-    const isMarked = marked[index] === true;
+  cats.forEach(function (name, i) {
+    const on = marks.has(i);
     const btn = document.createElement("button");
-    btn.className = "cat-btn" + (isMarked ? " active" : "");
+    btn.className = "root" + (on ? " active" : "");
     btn.innerHTML =
-      '<span class="count">' + counts[index] + "</span>" +
-      "<span>" + escapeHtml(name) + "</span>" +
-      (isMarked ? '<span class="today-tag">✓ marked</span>' : "");
+      '<span class="dot" style="background:' + COLORS[i] +
+      ";opacity:" + (on ? 1 : 0.3) + '"></span>' +
+      '<span class="name">' + escapeHtml(name) + "</span>";
 
     btn.addEventListener("click", function () {
       const list = getCheckins();
-      // Is the chosen day already marked for this category? Find it.
+      const sel = localDayStr(selectedMs);
       const existing = list.findIndex(function (item) {
-        return item.c === index && localDayStr(item.t) === selectedDay;
+        return item.c === i && localDayStr(item.t) === sel;
       });
-
-      if (existing >= 0) {
-        list.splice(existing, 1); // tap again = undo this day's mark
-      } else {
-        list.push({ c: index, t: selectedMs }); // mark the chosen day
-      }
+      if (existing >= 0) list.splice(existing, 1);   // tap again = take it back
+      else list.push({ c: i, t: selectedMs });        // mark the chosen day
       saveCheckins(list);
-
-      renderGrid();
-      renderSummary();
+      refresh();
     });
 
     grid.appendChild(btn);
   });
 }
 
-// --- The day picker ----------------------------------------------------
+function renderCalendar() {
+  calendarEl.innerHTML = "";
+  const today = noonOf(Date.now());
+  const selStr = localDayStr(selectedMs);
 
-const dayPrev = document.getElementById("day-prev");
-const dayNext = document.getElementById("day-next");
-const dayLabelEl = document.getElementById("day-label");
-
-function renderDayNav() {
-  dayLabelEl.textContent = dayLabel(selectedMs);
-  // Can't mark the future: disable "next" once we're on today.
-  dayNext.disabled = localDayStr(selectedMs) === localDayStr(Date.now());
+  for (let k = WINDOW_DAYS - 1; k >= 0; k--) {
+    const ms = noonOf(today - k * DAY_MS);
+    const ds = localDayStr(ms);
+    const has = marksForDay(ds).size > 0;
+    const cell = document.createElement("button");
+    cell.className = "cal-cell" + (ds === selStr ? " selected" : "") + (has ? " has" : "");
+    cell.innerHTML =
+      '<span class="cal-wd">' +
+      new Date(ms).toLocaleDateString([], { weekday: "narrow" }) + "</span>" +
+      '<span class="cal-day">' + new Date(ms).getDate() + "</span>" +
+      '<span class="cal-mark"></span>';
+    cell.addEventListener("click", function () {
+      selectedMs = ms;
+      refresh();
+    });
+    calendarEl.appendChild(cell);
+  }
 }
-
-dayPrev.addEventListener("click", function () {
-  selectedMs = noonOf(selectedMs - 24 * 60 * 60 * 1000);
-  renderDayNav();
-  renderGrid();
-});
-
-dayNext.addEventListener("click", function () {
-  if (dayNext.disabled) return;
-  selectedMs = noonOf(selectedMs + 24 * 60 * 60 * 1000);
-  renderDayNav();
-  renderGrid();
-});
-
-// --- The 14-day summary bars ------------------------------------------
-
-const summary = document.getElementById("summary");
 
 function renderSummary() {
   const cats = getCategories();
   const counts = countsLast14();
+  summaryEl.innerHTML = "";
 
-  // pair up name + count, then sort highest first
-  const rows = cats.map(function (name, index) {
-    return { name: name, count: counts[index] };
-  }).sort(function (a, b) { return b.count - a.count; });
+  cats.forEach(function (name, i) {
+    const c = counts[i];
+    const status = c === 0 ? "dormant · 0 of 14" : "tended · " + c + " of 14";
 
-  const max = Math.max.apply(null, counts.concat([1]));
-  const total = counts.reduce(function (a, b) { return a + b; }, 0);
+    let segs = "";
+    for (let s = 0; s < WINDOW_DAYS; s++) {
+      segs += '<span class="seg" style="' +
+        (s < c ? "background:" + COLORS[i] : "") + '"></span>';
+    }
 
-  if (total === 0) {
-    summary.innerHTML = '<p class="hint">No taps yet. Tap a category above to start.</p>';
-    return;
-  }
-
-  summary.innerHTML = "";
-  rows.forEach(function (row) {
-    const width = Math.round((row.count / max) * 100);
-    const el = document.createElement("div");
-    el.className = "bar-row";
-    el.innerHTML =
-      '<div class="bar-label"><span>' + escapeHtml(row.name) + "</span>" +
-      "<span>" + row.count + "</span></div>" +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + width + '%"></div></div>';
-    summary.appendChild(el);
+    const row = document.createElement("div");
+    row.className = "sum-row";
+    row.innerHTML =
+      '<div class="sum-top"><span class="sum-name">' + escapeHtml(name) +
+      '</span><span class="sum-status">' + status + "</span></div>" +
+      '<div class="segments">' + segs + "</div>";
+    summaryEl.appendChild(row);
   });
 }
 
-// --- Editing the category names ---------------------------------------
+function refresh() {
+  renderDay();
+  renderTally();
+  renderGrid();
+  renderCalendar();
+  renderSummary();
+}
 
-const editToggle = document.getElementById("edit-toggle");
-const editPanel = document.getElementById("edit-panel");
-const editFields = document.getElementById("edit-fields");
-const editDone = document.getElementById("edit-done");
+// --- Day arrows --------------------------------------------------------
 
-editToggle.addEventListener("click", function () {
+dayPrev.addEventListener("click", function () {
+  if (dayPrev.disabled) return;
+  selectedMs = noonOf(selectedMs - DAY_MS);
+  refresh();
+});
+dayNext.addEventListener("click", function () {
+  if (dayNext.disabled) return;
+  selectedMs = noonOf(selectedMs + DAY_MS);
+  refresh();
+});
+
+// --- Tend categories (rename) -----------------------------------------
+
+const tendBtn = document.getElementById("tend-btn");
+const tendPanel = document.getElementById("tend-panel");
+const tendFields = document.getElementById("tend-fields");
+const tendDone = document.getElementById("tend-done");
+
+tendBtn.addEventListener("click", function () {
   const cats = getCategories();
-  editFields.innerHTML = "";
-  cats.forEach(function (name, index) {
+  tendFields.innerHTML = "";
+  cats.forEach(function (name, i) {
     const input = document.createElement("input");
     input.type = "text";
     input.value = name;
-    input.dataset.index = index;
-    editFields.appendChild(input);
+    input.dataset.index = i;
+    tendFields.appendChild(input);
   });
-  editPanel.hidden = false;
-  editToggle.hidden = true;
+  tendPanel.hidden = false;
+  tendPanel.scrollIntoView({ behavior: "smooth" });
 });
 
-editDone.addEventListener("click", function () {
-  const inputs = editFields.querySelectorAll("input");
+tendDone.addEventListener("click", function () {
   const cats = getCategories();
-  inputs.forEach(function (input) {
-    const i = Number(input.dataset.index);
+  tendFields.querySelectorAll("input").forEach(function (input) {
     const value = input.value.trim();
-    if (value) cats[i] = value;
+    if (value) cats[Number(input.dataset.index)] = value;
   });
   saveCategories(cats);
-  editPanel.hidden = true;
-  editToggle.hidden = false;
-  renderGrid();
-  renderSummary();
+  tendPanel.hidden = true;
+  refresh();
+});
+
+// --- Share -------------------------------------------------------------
+
+document.getElementById("share-btn").addEventListener("click", async function () {
+  const data = {
+    title: "Tjikko",
+    text: "an almanac of where the attention goes",
+    url: location.href,
+  };
+  if (navigator.share) {
+    try { await navigator.share(data); } catch (e) { /* cancelled */ }
+  } else {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      alert("Link copied — share it with your people.");
+    } catch (e) {
+      alert(location.href);
+    }
+  }
 });
 
 // --- Helpers & startup -------------------------------------------------
 
-// Keep typed text from being treated as HTML (basic safety).
 function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
 
-renderDayNav();
-renderGrid();
-renderSummary();
+refresh();
 
-// Register the service worker so the app can be installed / work offline.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
     navigator.serviceWorker.register("./sw.js");

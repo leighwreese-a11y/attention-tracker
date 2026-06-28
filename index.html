@@ -3,47 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attention Tracker</title>
+  <meta name="color-scheme" content="dark" />
+  <title>Tjikko</title>
 
   <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#0f766e" />
+  <meta name="theme-color" content="#11160e" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Attention" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tjikko" />
 
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <main>
-    <h1>Attention Tracker</h1>
-
-    <!-- 1. Tap a category to log where your attention is right now -->
-    <section class="card">
-      <h2>Where's your attention?</h2>
-      <p class="hint">Tap to mark the chosen day. Tap again to undo. One mark per day.</p>
-      <div class="day-nav">
-        <button id="day-prev" class="secondary" aria-label="Previous day">‹</button>
-        <span id="day-label"></span>
-        <button id="day-next" class="secondary" aria-label="Next day">›</button>
+    <!-- Masthead -->
+    <header class="masthead">
+      <img class="mast-icon" src="./icon-192.png" alt="" />
+      <div>
+        <h1>Tjikko</h1>
+        <p class="tagline">an almanac of where the attention goes</p>
       </div>
+    </header>
+
+    <!-- Today: the tending card -->
+    <p class="rule"><span>Today</span></p>
+    <section class="card">
+      <div class="daystrip">
+        <button id="day-prev" class="ghost arrow" aria-label="Previous day">‹</button>
+        <span id="day-caps" class="day-caps"></span>
+        <button id="day-next" class="ghost arrow" aria-label="Next day">›</button>
+      </div>
+      <h2 id="tend-title" class="display"></h2>
+      <p class="instruct">Touch a root to mark where your attention flowed. Tap again to take one back.</p>
+      <p id="tally" class="tally"></p>
       <div id="grid" class="grid"></div>
+      <p class="card-foot">Each tap is one mark. Nothing leaves your phone.</p>
     </section>
 
-    <!-- 2. Rolling 14-day summary -->
+    <!-- The fortnight calendar -->
+    <p class="rule"><span>The last fourteen days</span></p>
     <section class="card">
-      <h2>Last 14 days</h2>
-      <p class="hint">Days each category got your attention. Older days drop off automatically.</p>
+      <div id="calendar" class="calendar"></div>
+    </section>
+
+    <!-- Per-category summary -->
+    <p class="rule"><span>Roots gone quiet</span></p>
+    <section class="card">
+      <p class="instruct">What the grove has been thirsting for. Last 14 days.</p>
       <div id="summary"></div>
     </section>
 
-    <!-- 3. Edit the 12 category names -->
-    <section class="card">
-      <button id="edit-toggle" class="secondary">Edit categories</button>
-      <div id="edit-panel" class="edit-panel" hidden>
-        <p class="hint">Rename any category, then tap Done.</p>
-        <div id="edit-fields"></div>
-        <button id="edit-done">Done</button>
-      </div>
+    <p class="footer-note">
+      Stored only on this device, in this browser. <em>Add to Home Screen</em> to keep Tjikko close.<br />
+      Built by you, for your people.
+    </p>
+
+    <div class="actions">
+      <button id="tend-btn" class="ghost wide">✎ Tend categories</button>
+      <button id="share-btn" class="ghost wide">⤳ Share</button>
+    </div>
+
+    <!-- Rename panel (hidden until "Tend categories") -->
+    <section id="tend-panel" class="card" hidden>
+      <p class="instruct">Rename any root, then tap Done.</p>
+      <div id="tend-fields"></div>
+      <button id="tend-done" class="ghost wide">Done</button>
     </section>
   </main>
 

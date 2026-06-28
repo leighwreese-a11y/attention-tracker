@@ -1,12 +1,12 @@
 {
-  "name": "Attention Tracker",
-  "short_name": "Attention",
-  "description": "Track your attention and intentions.",
+  "name": "Tjikko",
+  "short_name": "Tjikko",
+  "description": "An almanac of where the attention goes.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f7f8",
-  "theme_color": "#0f766e",
+  "background_color": "#11160e",
+  "theme_color": "#11160e",
   "icons": [
     {
       "src": "./icon-192.png",
