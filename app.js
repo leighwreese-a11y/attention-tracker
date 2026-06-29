@@ -6,9 +6,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Starter "roots". Fully editable via Tend categories.
 const DEFAULT_CATEGORIES = [
-  "Deep work", "Making art", "Reading", "The garden",
-  "People I love", "The body", "Rest", "The wander",
-  "Small screens", "Cooking", "Money & admin", "The unnamed",
+  "Wild Self & Desire", "Spirit, Meaning & Wonder", "Creative Work", "Love & Partnership",
+  "Nurturing Others", "Friendship", "Community", "Wild Earth",
+  "Body & Vitality", "Home & Hearth", "Rest & Play", "Livelihood & Ambition",
 ];
 
 // One earthy colour per category, by position.
