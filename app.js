@@ -11,11 +11,20 @@ const DEFAULT_CATEGORIES = [
   "Body & Vitality", "Home & Hearth", "Rest & Play", "Livelihood & Ambition",
 ];
 
-// One earthy colour per category, by position.
+// A forest palette — one woodland colour per category, by position.
 const COLORS = [
-  "#8b9b6a", "#c07a4b", "#9a86b4", "#6fa080",
-  "#c08585", "#5f9a92", "#c2b06a", "#88a0bd",
-  "#b56a4a", "#cda35a", "#a9a596", "#9a978c",
+  "#b0563f", // 1  Wild Self & Desire       — rosehip red
+  "#8a78a3", // 2  Spirit, Meaning & Wonder — heather purple
+  "#c89a4e", // 3  Creative Work            — golden ochre
+  "#bd7b7a", // 4  Love & Partnership       — faded rose
+  "#c5926f", // 5  Nurturing Others         — peach clay
+  "#94a566", // 6  Friendship               — fern green
+  "#5f8f78", // 7  Community                — pine teal
+  "#7a5d43", // 8  Wild Earth               — bark brown
+  "#6f9e57", // 9  Body & Vitality          — fresh moss
+  "#a8633c", // 10 Home & Hearth            — ember rust
+  "#7d96ab", // 11 Rest & Play              — sky-through-leaves blue
+  "#6d7f6a", // 12 Livelihood & Ambition    — slate green
 ];
 
 // --- Saving & loading --------------------------------------------------
