@@ -236,6 +236,20 @@ tendBtn.addEventListener("click", function () {
   tendPanel.scrollIntoView({ behavior: "smooth" });
 });
 
+document.getElementById("tend-reset").addEventListener("click", function () {
+  saveCategories(DEFAULT_CATEGORIES.slice());
+  // refill the rename inputs with the restored names
+  tendFields.innerHTML = "";
+  DEFAULT_CATEGORIES.forEach(function (name, i) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = name;
+    input.dataset.index = i;
+    tendFields.appendChild(input);
+  });
+  refresh();
+});
+
 tendDone.addEventListener("click", function () {
   const cats = getCategories();
   tendFields.querySelectorAll("input").forEach(function (input) {
