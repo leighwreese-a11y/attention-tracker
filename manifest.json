@@ -1,7 +1,7 @@
 {
   "name": "Tjikko",
   "short_name": "Tjikko",
-  "description": "An almanac of where the attention goes.",
+  "description": "An almanac of where attention goes.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

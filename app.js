@@ -275,7 +275,7 @@ tendDone.addEventListener("click", function () {
 document.getElementById("share-btn").addEventListener("click", async function () {
   const data = {
     title: "Tjikko",
-    text: "an almanac of where the attention goes",
+    text: "an almanac of where attention goes",
     url: location.href,
   };
   if (navigator.share) {
