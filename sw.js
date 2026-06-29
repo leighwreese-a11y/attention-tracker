@@ -1,7 +1,8 @@
-// Service worker: lets the app open even with no internet,
-// by keeping a copy of the files on the device.
+// Service worker: keeps a copy of the files so the app still opens offline.
+// Strategy: NETWORK-FIRST — always try the internet for the freshest version,
+// and fall back to the saved copy only when there's no connection.
 
-const CACHE = "tjikko-v2";
+const CACHE = "tjikko-v3";
 const FILES = [
   "./",
   "./index.html",
@@ -12,7 +13,7 @@ const FILES = [
   "./icon-512.png",
 ];
 
-// Save the files when the app is first installed.
+// Pre-save the files on install, and take over right away.
 self.addEventListener("install", function (event) {
   self.skipWaiting();
   event.waitUntil(
@@ -34,11 +35,20 @@ self.addEventListener("activate", function (event) {
   );
 });
 
-// Serve files from the saved copy first, fall back to the network.
+// Try the network first; update the saved copy; fall back to cache offline.
 self.addEventListener("fetch", function (event) {
+  if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      return cached || fetch(event.request);
-    })
+    fetch(event.request)
+      .then(function (response) {
+        const copy = response.clone();
+        caches.open(CACHE).then(function (cache) {
+          cache.put(event.request, copy);
+        });
+        return response;
+      })
+      .catch(function () {
+        return caches.match(event.request);
+      })
   );
 });
