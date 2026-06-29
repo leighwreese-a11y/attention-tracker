@@ -105,14 +105,14 @@ function renderDay() {
     .toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })
     .toUpperCase() + " ✦";
 
-  tendTitle.textContent = isToday ? "The grove I tend today" : "The grove I tended";
+  tendTitle.textContent = isToday ? "Where I meet the Grove today" : "Where I met the Grove";
   dayNext.disabled = isToday;
   dayPrev.disabled = sel === localDayStr(oldestMs());
 }
 
 function renderTally() {
   const n = marksForDay(localDayStr(selectedMs)).size;
-  tallyEl.innerHTML = "<strong>" + n + "</strong> of 12 roots tended.";
+  tallyEl.innerHTML = "<strong>" + n + "</strong> of 12 answered.";
 }
 
 function renderGrid() {
